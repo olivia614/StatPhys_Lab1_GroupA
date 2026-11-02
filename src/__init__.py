@@ -1,1 +1,0 @@
-# Statistical Physics - Practice 1 package
