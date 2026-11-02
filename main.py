@@ -7,8 +7,7 @@ from src.microstates import enumerate_coins, time_generator
 from src.combinatorics import get_distribution, prob_k, cumulative_prob, ln_omega
 from src.thermodynamics import get_team_N, delta_entropy, waiting_time, likelihood_ratio
 
-# Put your group's NIAs here
-NIAS = [100400036, 100400045, 100400060, 100400075]
+NIAS = [100496704, 100599060, 100523129, 100534604]
 
 
 def plot_distributions(save_dir: Path):
