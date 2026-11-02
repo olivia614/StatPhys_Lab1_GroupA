@@ -259,13 +259,15 @@ def main():
     t_sec, t_yr = waiting_time(N, 8)
     print(f"h) Waiting time for k=8 heads: {t_sec:.4e} s ({t_yr:.4e} years)")
 
-    r_m_minus = likelihood_ratio(N, half, M - 10)
+    # r_m_minus = likelihood_ratio(N, half, M - 10) # this is a negative number since our M is 7
     r_m_plus = likelihood_ratio(N, half, M + 10)
-    r_half_10 = likelihood_ratio(N, half, half + 10)
-    print(f"i) Ratio P({half}) / P(M-10={M-10}): {r_m_minus:.4e}")
+    r_minus_10 = likelihood_ratio(N, half, half - 10)
+    r_plus_10 = likelihood_ratio(N, half, half + 10)
+    # print(f"i) Ratio P({half}) / P(M-10={M-10}): {r_m_minus:.4e}")
+    print(f"i) Ratio P({half}) / P(M-10={M-10}): k = M - 10 = {M-10} is not a valid macrostate (k must be >= 0), so no ratio exists.")
     print(f"   Ratio P({half}) / P(M+10={M+10}): {r_m_plus:.4f}")
-    print(f"   Ratio P({half}) / P(N/2+-10={half+10}): {r_half_10:.4f}")
-
+    print(f"i) Ratio P({half}) / P({half-10}): {r_minus_10:.4f}")
+    print(f"   Ratio P({half}) / P({half+10}): {r_plus_10:.4f}")
     # --- Generate all 4 PDF figures ---
     print("\n--- Generating Figures ---")
     plot_distributions(fig_dir)
