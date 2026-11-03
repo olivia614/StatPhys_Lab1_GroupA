@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from src.microstates import iter_microstates, enumerate_coins, fast_bitwise_counts
+from src.microstates import iter_microstates, enumerate_coins, fast_bitwise_counts, histogram_generator, histogram_vectorised
 
 
 def test_iter_microstates_count():
@@ -27,3 +27,11 @@ def test_fast_bitwise_counts():
     counts = fast_bitwise_counts(12, chunk_bits=8)
     expected = np.array([math.comb(12, k) for k in range(13)])
     assert np.array_equal(counts, expected)
+
+
+def test_histograms_match_binomial():
+    # Check that both functions give math.comb(N, k)
+    for N in [5, 12, 17, 20]:
+        expected = np.array([math.comb(N, k) for k in range(N + 1)])
+        assert np.array_equal(histogram_generator(N), expected)
+        assert np.array_equal(histogram_vectorised(N), expected)
