@@ -9,6 +9,74 @@ from src.thermodynamics import get_team_N, delta_entropy, waiting_time, likeliho
 
 NIAS = [100496704, 100599060, 100523129, 100534604]
 
+def write_n7_summary_table(path: Path = Path("report/tables/n7_summary.tex")) -> None:
+    """Table 1 (Part 1a): Write the N = 7 summary rows (k, tails, example microstate, Omega, P_k) like the example."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    N = 7
+    data = enumerate_coins(N)  # ordered from k = 7 down to k = 0
+    lines = []
+    for k, states in data.items():
+        omega = len(states)
+        assert omega == math.comb(N, k)  # sanity check against the exact binomial
+        example = states[0]
+        lines.append(
+            f"{k} & {N - k} & \\texttt{{{example}}} & {omega} & "
+            f"${omega}/{2**N} = {omega / 2**N:.4f}$ \\\\"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Saved {path}")
+
+def write_n7_full_table(path: Path = Path("report/tables/n7_full.tex")) -> None:
+    """Table 1 (Part 1a - Appendix C): Write all 128 microstates for N = 7."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = enumerate_coins(7)  # ordered from k = 7 down to k = 0
+    lines = []
+    for k, states in data.items():
+        label = f"{k}H\\,{7 - k}T ({len(states)})"
+        strings = ", ".join(states)
+        lines.append(f"{label} & \\texttt{{{strings}}} \\\\")
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Saved {path}")
+
+def plot_enumeration_scaling(save_dir: Path) -> None:
+    """Figure 2 (Part 1b): Measured enumeration times vs N with 2^N fits and the 5-min limit
+
+    The numbers are the measured mean +/- sample standard deviation of 3 runs (single direct runs for N = 33, 34), taken from our benchmark runs on a single core.
+    """
+    save_dir.mkdir(parents=True, exist_ok=True)
+
+    # Python generator: N, mean time (s), sample standard deviation (s)
+    Ng = [16, 18, 20, 22, 24, 26]
+    tg = [0.004357, 0.020913, 0.075226, 0.296597, 1.245301, 5.284663]
+    sg = [0.000156, 0.002405, 0.003418, 0.013058, 0.107880, 0.702673]
+    # Chunked NumPy (vectorized)
+    Nv = [24, 26, 28, 30]
+    tv = [0.330541, 1.281124, 5.142856, 22.143300]
+    sv = [0.008448, 0.008635, 0.082801, 0.942634]
+
+    n = np.arange(15, 37)
+    fig, ax = plt.subplots(figsize=(6.5, 4.5))
+    ax.errorbar(Ng, tg, yerr=sg, fmt="o", color="tab:blue", capsize=3,
+                label="Python generator (1 core)")
+    ax.plot(n, 73.0e-9 * 2.0 ** n, "--", color="tab:blue")      # t = c 2^N, c = 73.0 ns
+    ax.errorbar(Nv, tv, yerr=sv, fmt="o", color="tab:green", capsize=3,
+                label="Chunked NumPy (1 core)")
+    ax.plot(n, 19.4e-9 * 2.0 ** n, "--", color="tab:green")     # c = 19.4 ns
+    ax.plot([33, 34], [243.9, 468.4], "k*", markersize=12, label="Single direct run")
+    ax.axhline(300, color="tab:red", linestyle=":", label="5-min limit")
+
+    ax.set_yscale("log")
+    ax.set_xlabel("Number of coins $N$")
+    ax.set_ylabel("Wall-clock time (s)")
+    ax.set_xlim(15, 36)
+    ax.grid(True, linestyle="--", alpha=0.5)
+    ax.legend(fontsize=9, loc="upper left")
+
+    fig.tight_layout()
+    out_file = save_dir / "enumeration_scaling.pdf"
+    fig.savefig(out_file, bbox_inches="tight")
+    plt.close(fig)
+    print(f"Saved {out_file}")
 
 def plot_distributions(save_dir: Path):
     """Figure 1 (Part 1c): P_k and Omega(N, k) for N = 20, 50, 80, 100."""
@@ -50,66 +118,6 @@ def plot_distributions(save_dir: Path):
     print(f"Saved {out_file}")
 
 
-def plot_enumeration_scaling(save_dir: Path):
-    """Figure 2 (Part 1b): Runtime and RAM scaling vs N for full enumeration."""
-    save_dir.mkdir(parents=True, exist_ok=True)
-
-    # Measure quick baseline points (N = 16..22) and extrapolate 2^N scaling
-    n_meas = np.array([16, 18, 20, 22])
-    t_meas = []
-    for n in n_meas:
-        _, dt = time_generator(int(n))
-        t_meas.append(max(dt, 1e-5))
-    t_meas = np.array(t_meas)
-
-    # Fit rate from N = 22 measurement to extrapolate up to N = 40
-    n_range = np.arange(15, 41)
-    t_gen_extrap = t_meas[-1] * (2.0 ** (n_range - n_meas[-1]))
-    # Vectorized chunked bitwise is ~45x faster than pure Python yield loop
-    t_vec_extrap = t_gen_extrap / 45.0
-
-    # Memory in GB: Naive list of 64-byte objects vs O(1) generator
-    ram_list_gb = (64.0 * (2.0 ** n_range)) / (1024.0 ** 3)
-    ram_gen_gb = np.full_like(n_range, 0.0001, dtype=float)  # ~100 KB constant
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4.8))
-
-    # Panel (a): Wall-clock runtime
-    ax1.plot(n_meas, t_meas, "ko", markersize=6, label="Measured (Python generator)")
-    ax1.plot(n_range, t_gen_extrap, "b-", lw=1.5, label="Generator scaling $\\mathcal{O}(2^N)$")
-    ax1.plot(n_range, t_vec_extrap, "g--", lw=1.5, label="Chunked bitwise scaling")
-    ax1.axhline(300, color="tab:red", linestyle=":", lw=1.5, label="5-min limit (300 s)")
-
-    ax1.set_title("(a) Full Enumeration Runtime vs. $N$")
-    ax1.set_xlabel("Number of coins $N$")
-    ax1.set_ylabel("Execution time (s)")
-    ax1.set_yscale("log")
-    ax1.set_xlim(15, 40)
-    ax1.set_ylim(1e-4, 1e5)
-    ax1.grid(True, linestyle="--", alpha=0.5)
-    ax1.legend(loc="upper left", fontsize=9)
-
-    # Panel (b): Memory usage
-    ax2.plot(n_range, ram_list_gb, "r-", lw=1.5, label="In-memory list $\\mathcal{O}(N 2^N)$")
-    ax2.plot(n_range, ram_gen_gb, "b-", lw=1.5, label="Lazy generator $\\mathcal{O}(1)$")
-    ax2.axhline(16.0, color="k", linestyle=":", lw=1.5, label="16 GB RAM limit ($N \\approx 28$)")
-
-    ax2.set_title("(b) Memory Footprint vs. $N$")
-    ax2.set_xlabel("Number of coins $N$")
-    ax2.set_ylabel("Memory usage (GB)")
-    ax2.set_yscale("log")
-    ax2.set_xlim(15, 40)
-    ax2.set_ylim(1e-5, 1e5)
-    ax2.grid(True, linestyle="--", alpha=0.5)
-    ax2.legend(loc="upper left", fontsize=9)
-
-    fig.tight_layout()
-    out_file = save_dir / "enumeration_scaling.pdf"
-    fig.savefig(out_file, bbox_inches="tight")
-    plt.close(fig)
-    print(f"Saved {out_file}")
-
-
 def plot_thermodynamic_limit(save_dir: Path):
     """Figure 3 (Part 1e & 2k): Narrowing of p(x) and 1/sqrt(N) relative fluctuation."""
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -120,30 +128,28 @@ def plot_thermodynamic_limit(save_dir: Path):
         k, _, p_k = get_distribution(N)
         x = k / N
         p_density = N * p_k
-        ax1.plot(x, p_density, label=f"N = {N}", color=col, lw=1.4)
+        ax1.plot(x, p_density, label=f"N = {N}", color=col, lw=1.5)
 
     ax1.set_title("(a) Intensive Distribution $p(x) = N P_{Nx}$ vs. Fraction $x = k/N$")
     ax1.set_xlabel("Fraction of heads $x = k/N$")
-    ax1.set_ylabel("Probability density $p(x)$")
+    ax1.set_ylabel("Probability density $p(x) = N P_{Nx}$")
     ax1.set_xlim(0.2, 0.8)
     ax1.set_ylim(0, 45)
     ax1.grid(True, linestyle="--", alpha=0.5)
-    ax1.legend(loc="upper right")
-
+    ax1.legend(loc="upper right", fontsize=9)
+    
     # Panel (b): Relative fluctuation sigma / mu = 1 / sqrt(N) up to N = 10^23
     n_log = np.logspace(1, 23, 300)
     rel_fluct = 1.0 / np.sqrt(n_log)
-
-    ax2.plot(n_log, rel_fluct, "b-", lw=1.6, label="$\\sigma / \\mu = 1 / \\sqrt{N}$")
+    ax2.plot(n_log, rel_fluct, "k-", lw=1.5, label="$\\sigma / \\mu = 1 / \\sqrt{N}$")
+    
     # Highlight specific N values
-    highlight_n = np.array([20.0, 100.0, 150.0, 1e23])
-    ax2.plot(highlight_n, 1.0 / np.sqrt(highlight_n), "ro", markersize=6, label="Evaluated systems")
-
-    ax2.annotate("$N = 100$\n($\\sigma/\\mu = 0.10$)", xy=(100, 0.1), xytext=(400, 0.25),
-                 arrowprops=dict(arrowstyle="->", lw=0.8), fontsize=8.5)
-    ax2.annotate("$N = 10^{23}$\n($\\sigma/\\mu \\approx 3.16 \\times 10^{-12}$)",
-                 xy=(1e23, 3.16e-12), xytext=(1e14, 1e-10),
-                 arrowprops=dict(arrowstyle="->", lw=0.8), fontsize=8.5)
+    systems = [(20, "tab:blue"), (107, "tab:orange"), (1e23, "tab:green")]
+    for n_val, col in systems:
+        val = 1.0 / np.sqrt(n_val)
+        name = f"$N = 10^{{23}}$:  $\\sigma/\\mu = {val:.2e}$" if n_val == 1e23 \
+            else f"$N = {int(n_val)}$:  $\\sigma/\\mu = {val:.3f}$"
+        ax2.plot([n_val], [val], "o", color=col, markersize=7, label=name)
 
     ax2.set_title("(b) Relative Fluctuation Decay Toward $N \\to 10^{23}$")
     ax2.set_xlabel("System size $N$")
@@ -153,7 +159,7 @@ def plot_thermodynamic_limit(save_dir: Path):
     ax2.set_xlim(1e1, 1e24)
     ax2.set_ylim(1e-13, 1e0)
     ax2.grid(True, linestyle="--", alpha=0.5)
-    ax2.legend(loc="upper right")
+    ax2.legend(loc="upper right", fontsize=8.5)
 
     fig.tight_layout()
     out_file = save_dir / "thermodynamic_limit.pdf"
@@ -162,7 +168,7 @@ def plot_thermodynamic_limit(save_dir: Path):
     print(f"Saved {out_file}")
 
 
-def plot_part2_intervals(N: int, save_dir: Path):
+def plot_probabilities_entropy(N: int, save_dir: Path):
     """Figure 4 (Part 2): Cumulative intervals and Boltzmann entropy changes for N = 100 + M."""
     save_dir.mkdir(parents=True, exist_ok=True)
     half = N // 2
@@ -192,17 +198,14 @@ def plot_part2_intervals(N: int, save_dir: Path):
     ax1.legend(loc="upper right", fontsize=8.5)
 
     # Panel (b): Entropy variation Delta S / k_B relative to k = N/2
-    ax2.plot(k, ds_over_kb, color="tab:purple", lw=1.5, label="$\\Delta S(k)/k_B = \\ln(\\Omega_k / \\Omega_{N/2})$")
+    ax2.plot(k, ds_over_kb, color="k", lw=1.5, label="$\\Delta S(k)/k_B = \\ln(\\Omega_k / \\Omega_{N/2})$")
 
     # Mark points from 2e, 2f, 2g
-    pts_k = [20, half, half + 10, half + 25]
-    pts_ds = [ln_omega(N, k_val) - ln_omega(N, half) for k_val in pts_k]
-    ax2.plot(pts_k, pts_ds, "ro", markersize=5.5, label="Evaluated states (2e, 2f, 2g)")
-
-    ax2.annotate(f"$k=20$ ($\\Delta S/k_B = {pts_ds[0]:.1f}$)", xy=(20, pts_ds[0]),
-                 xytext=(32, pts_ds[0] - 5), arrowprops=dict(arrowstyle="->", lw=0.8), fontsize=8.5)
-    ax2.annotate(f"$k={half+25}$ ($\\Delta S/k_B = {pts_ds[3]:.2f}$)", xy=(half + 25, pts_ds[3]),
-                 xytext=(half + 5, pts_ds[3] - 18), arrowprops=dict(arrowstyle="->", lw=0.8), fontsize=8.5)
+    for kv, col in zip([20, half, half + 10, half + 25],
+                       ["tab:red", "tab:green", "tab:orange", "tab:blue"]):
+        ds = ln_omega(N, kv) - ln_omega(N, half)
+        ax2.plot([kv], [ds], "o", color=col, markersize=6,
+                 label=f"$k={kv}$: $\\Delta S/k_B={ds:.2f}$")
 
     ax2.set_title(f"(b) Boltzmann Entropy Relative to Equilibrium ($N = {N}$)")
     ax2.set_xlabel("Number of heads $k$")
@@ -213,7 +216,7 @@ def plot_part2_intervals(N: int, save_dir: Path):
     ax2.legend(loc="lower center", fontsize=8.5)
 
     fig.tight_layout()
-    out_file = save_dir / "part2_probabilities_entropy.pdf"
+    out_file = save_dir / "probabilities_entropy.pdf"
     fig.savefig(out_file, bbox_inches="tight")
     plt.close(fig)
     print(f"Saved {out_file}")
@@ -227,6 +230,9 @@ def main():
     n7_data = enumerate_coins(7)
     for k, states in n7_data.items():
         print(f"{k} heads, {7-k} tails: {len(states)} microstates")
+    
+    write_n7_summary_table()
+    write_n7_full_table()
 
     print("\n--- Part 1b: Generator Timing Test ---")
     for n_test in [20, 22, 24]:
@@ -273,7 +279,7 @@ def main():
     plot_distributions(fig_dir)
     plot_enumeration_scaling(fig_dir)
     plot_thermodynamic_limit(fig_dir)
-    plot_part2_intervals(N, fig_dir)
+    plot_probabilities_entropy(N, fig_dir)
 
 
 if __name__ == "__main__":
