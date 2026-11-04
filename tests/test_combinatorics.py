@@ -6,6 +6,7 @@ from src.thermodynamics import get_team_N, delta_entropy, likelihood_ratio
 
 def test_ln_omega_matches_exact_comb():
     # Compare log-gamma calculation against Python's exact math.comb
+    # The log-gamma formula must agree with the log of the exact integer
     for N in [20, 50, 100, 150]:
         for k in [0, 1, N // 4, N // 2, N]:
             exact_ln = math.log(math.comb(N, k))
@@ -14,6 +15,7 @@ def test_ln_omega_matches_exact_comb():
 
 
 def test_probabilities_sum_to_one():
+    # Ensure that the probability distribution sums to 1 and is symmetric
     for N in [20, 50, 80, 100]:
         _, _, probs = get_distribution(N)
         assert math.isclose(np.sum(probs), 1.0, rel_tol=1e-12)
@@ -22,6 +24,7 @@ def test_probabilities_sum_to_one():
 
 
 def test_cumulative_prob():
+    # Test that summing over every macrostate is 1 and that a partial range matches teh exact integer sum / 2^N
     N = 150
     # Full range must sum to 1
     assert math.isclose(cumulative_prob(N, 0, N), 1.0, rel_tol=1e-12)
@@ -32,6 +35,7 @@ def test_cumulative_prob():
 
 
 def test_entropy_and_likelihood():
+    # Check that entropy change and the likelihood ratio are consistent
     _, M, N = get_team_N([100400036, 100400045, 100400060, 100400075])
     assert M == 50
     assert N == 150

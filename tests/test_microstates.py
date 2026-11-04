@@ -24,6 +24,7 @@ def test_enumerate_n7():
 
 
 def test_fast_bitwise_counts():
+    # Check that fast_bitwise_counts() reproduces the exact binomial
     counts = fast_bitwise_counts(12, chunk_bits=8)
     expected = np.array([math.comb(12, k) for k in range(13)])
     assert np.array_equal(counts, expected)
