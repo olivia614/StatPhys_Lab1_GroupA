@@ -274,6 +274,13 @@ def main():
     print(f"   Ratio P({half}) / P(M+10={M+10}): {r_m_plus:.4f}")
     print(f"i) Ratio P({half}) / P({half-10}): {r_minus_10:.4f}")
     print(f"   Ratio P({half}) / P({half+10}): {r_plus_10:.4f}")
+
+    # Mean and standard deviation of the P_k distribution (N = 100 + M), from the computed P_k
+    k_all, _, p_all = get_distribution(N)
+    mean_k = float(np.sum(k_all * p_all))                          # <k> = sum_k k P_k
+    std_k = float(np.sqrt(np.sum((k_all - mean_k) ** 2 * p_all)))  # sigma = sqrt(sum_k (k - <k>)^2 P_k)
+    print(f"Distribution of P_k for N = {N}: mean <k> = {mean_k:.4f} (N/2 = {N/2}), "
+          f"std sigma = {std_k:.4f} (sqrt(N)/2 = {np.sqrt(N)/2:.4f}), sum P_k = {np.sum(p_all):.6f}")
     # --- Generate all 4 PDF figures ---
     print("\n--- Generating Figures ---")
     plot_distributions(fig_dir)

@@ -1,0 +1,32 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+
+# --- LaTeX build files (keep main.tex, figures/ and tables/) ---
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.nav
+*.snm
+*.xdv
+
+# --- Course material (copyrighted PDFs, not ours to publish) ---
+guide/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -7,9 +7,9 @@ def iter_microstates(N: int):
     Generator that yields all 2^N microstates as integers from 0 to (1 << N) - 1.
     Uses O(1) memory since states are generated on the fly.
     """
-    total_states = 1 << N
+    total_states = 1 << N       #shifts 1 by N bits to the left, equivalent to 2**N (e.g. N=3 gives 1000=8)
     for state in range(total_states):
-        yield state
+        yield state             #provides one state at a time within the range, allowing for iteration without storing all states in memory at once
 
 
 def state_to_str(state: int, N: int) -> str:
