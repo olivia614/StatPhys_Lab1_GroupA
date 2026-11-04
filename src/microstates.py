@@ -51,17 +51,21 @@ def fast_bitwise_counts(N: int, chunk_bits: int = 24) -> np.ndarray:
     counts = np.zeros(N + 1, dtype=np.int64)
     total_states = 1 << N
     step = min(total_states, 1 << chunk_bits)
+    one = np.uint64(1)
 
     for start in range(0, total_states, step):
         stop = min(start + step, total_states)
         chunk = np.arange(start, stop, dtype=np.uint64)
 
-        # Count 1-bits (heads) for each number in the chunk using bit shifting
-        heads = np.zeros(stop - start, dtype=np.int64)
+        # Count 1-bits (heads) for each number in the chunk using bit shifting.
+        # Everything stays uint64: mixing uint64 with a plain Python int or with
+        # int64 makes NumPy promote to float64, which cannot be added into int64.
+        heads = np.zeros(stop - start, dtype=np.uint64)
         for bit in range(N):
-            heads += (chunk >> bit) & 1
+            heads += (chunk >> np.uint64(bit)) & one
 
-        counts += np.bincount(heads, minlength=N + 1)
+        # bincount needs integer indices of type intp, so convert once per block.
+        counts += np.bincount(heads.astype(np.intp), minlength=N + 1)
 
     return counts
 
