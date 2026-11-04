@@ -270,24 +270,83 @@ table~\ref{table:resultsprobentropy} allow us to determine some relevant propert
 Regarding the entropy results (5-7 of Table ~\ref{table:resultsprobentropy}), we find that the entropy difference results in negative values when the $k_{2}=53$ and positive for the case $k_{1]=53$. 
 As expected, and confirmed in Figure~\ref{fig:prob}(b), the state with the largest entropy, i.e. most disordered, corresponds to the $\frac{N}{2}=53$ case. These results are in agreement with the second law of thermodynamics, as will be further discussed later.  
 
-\paragraph{Thermodynamics implications}
-Each toss is an independent trial with success probability $p=P(N,8)$. The number of tosses until the first success is therefore geometric, with mean $1/p$. At one toss per second the expected wait is $\WaitEightS$\,s, which is $\WaitEightYears$ years or $\WaitEightUniverse$ times the age of the Universe.
+\subsection{Thermodynamic Analysis and Physical Interpretation}
 
 
-The equal split is $\RatioPlus$ times more likely than $N/2+10=\MPlus$ heads, and $\RatioMinus$ times more likely than $N/2-10=\MMinus$ heads.
+\subsubsection{Recurrence Times of Ordered Macrostates ($k = 8$)}
+\label{subsec:waiting_time}
 
-\subsection{Second Law of Thermodynamics Interpretation (question 10)}
-None of these results contradicts the Second Law, because in statistical mechanics the Second Law is a statement about probabilities, not a strict prohibition. The microscopic dynamics (re-tossing coins) are reversible, and every microstate is equally likely, including the ``ordered'' ones. A transition from $k=\Nhalf$ to $k=20$ lowers the entropy by $\Delta S_{k_1k_2}=\dSC\,\kB$ (question 7). It is not forbidden; it is simply $\Omega(\Nhalf)/\Omega(20)=e^{\,\dSCabs}$ times rarer than the reverse. For $N=\Nval$, fluctuations of a few $\kB$ (questions 5--6) do occur: about $\OutsideTenPct\%$ of tosses fall outside $\Nhalf\pm10$. These fluctuations are visible only because $N$ is small. The Second Law is the statement that the macrostate with maximum $\Omega$ (maximum $S$) overwhelmingly dominates, so a spontaneous evolution almost always goes towards higher entropy.
+To assess whether a highly ordered macrostate is observable on physical timescales, we consider the expected recurrence time $\langle T_{\text{wait}} \rangle$ required to spontaneously observe $k = 8$ heads in a system of $N = 107$ coins. At an experimental sampling rate of $N$ coins per second (yielding $\nu = 1 \text{ s}^{-1}$ complete configuration trials of $N$ coins per second), the expected waiting time is defined as:
+\begin{equation}
+    \langle T_{\text{wait}} \rangle = \frac{1}{\nu \cdot P(k=8)} = \frac{1}{P(k=8)} \quad \text{[seconds]}
+\end{equation}
 
-\subsection{The Limit $N\gg1$ (question 11)}
-For $N\sim10^{23}$, Eq.~\eqref{eq:gauss} and the log-space routines give:
+Evaluated in log-space by our Python implementation, $P(k=8) = \PeightHeads \approx 2.01 \times 10^{-21}$, returning an expected recurrence time of $\langle T_{\text{wait}} \rangle = \WaitEightS\text{ s} \approx 1.58 \times 10^{13} \text{ years}$ (Result 8 in Table~\ref{tab:entropy}).
+
+\paragraph{Physical Interpretation:}
+Comparing this duration to the estimated age of the Universe ($\tau_{\text{universe}} \approx 1.38 \times 10^{10} \text{ years}$), we draw a fundamental distinction between mathematical accessibility and physical observability:
 \begin{itemize}
-\item \textbf{Fixed $k$ (30 heads, 8 heads, $N/2\pm10$).} The probability is $\sim2^{-N}$. For example, $P(k=8)=\TLPeight$, so the waiting time and the likelihood ratios of question 9 become $10^{\sim3\times10^{22}}$. These events never happen.
-\item \textbf{$P(N/2)$} $=\sqrt{2/\pi N}=\TLPhalf\to0$, and so does any window of fixed width $\pm10$ or $\pm20$: that width is negligible compared with $\sigma=\TLsigma$. What tends to 1 is the probability of any \emph{relative} window $|k/N-\tfrac12|<\varepsilon$.
-\item \textbf{Entropy.} Fixed offsets ($N/2+25\to N/2$) give $|\Delta S|\simeq2\delta^2\kB/N\approx10^{-20}\kB\to0$. Macroscopic offsets ($k/N=0.501\to0.5$) give $|\Delta S|=\TLdSkB\,\kB$, i.e.\ about $\TLdSSI$\,J/K, which is a measurable thermodynamic entropy.
+    \item Because $P(k=8) > 0$, spontaneous ordering into $k = 8$ heads is dynamically permissible and does not violate any conservation law.
+    \item However, because $\langle T_{\text{wait}} \rangle \approx 1.58 \times 10^{13}\text{ years} \gg \tau_{\text{universe}}$, such low-entropy states are physically unobservable over any realistic temporal window.
 \end{itemize}
-In the thermodynamic limit, therefore, the probabilistic statement of question 10 becomes a deterministic law. Entropy-decreasing macroscopic fluctuations have probabilities $\exp(-|\Delta S|/\kB)\sim10^{-10^{17}}$, and the Second Law holds without exception in practice.
 
+
+\subsubsection{Multiplicity Peak and Likelihood Ratios}
+\label{subsec:likelihood_ratio}
+
+The concentration of probability around the equilibrium state ($k=53$) is quantified by the general likelihood ratios:
+\begin{equation}
+    \mathcal{R}_{+} \equiv \frac{P(53)}{P(63)} = \frac{\Omega(107, 53)}{\Omega(107, 63)}, \qquad \mathcal{R}_{-} \equiv \frac{P(53)}{P(43)} = \frac{\Omega(107, 53)}{\Omega(107, 43)}
+\end{equation}
+
+Evaluated in log-space by our Python implementation ($\ln \mathcal{R}_{\pm} = \ln\Omega_1 - \ln\Omega_2$), we obtain $\mathcal{R}_{+} = \RatioPlus \approx 5.34$ and $\mathcal{R}_{-} = \RatioMinus \approx 7.77$ (Result 9 in Table~\ref{tab:entropy}). These values demonstrate that even a minor departure of 10 coins ($\approx 9.3\%$ relative shift from the mean) causes a drop in probability by a factor of 5 to 8, confirming that maximum-entropy configurations overwhelmingly dominate phase space.
+
+
+\subsubsection{Statistical Interpretation of the Second Law of Thermodynamics}
+\label{subsec:second_law}
+
+A central question in statistical physics is whether non-zero probabilities for low-entropy macrostates (such as $k = 8$ or $k = 20$, where $\Delta S < 0$) contradict the Second Law of Thermodynamics.
+
+\paragraph{Physical Interpretation \& Resolution:}
+None of our numerical results contradict the Second Law. The apparent paradox is resolved by recognizing that statistical physics defines entropy via Boltzmann's relation:
+\begin{equation}
+    S = k_B \ln \Omega
+\end{equation}
+
+The conceptual justification rests on four physical pillars:
+\begin{enumerate}
+    \item \textbf{Microscopic Equiprobability:} Every individual microstate among the $2^N$ available configurations has the exact same probability ($P = 2^{-N}$). Microscopic dynamics exhibits no intrinsic preference for disorder.
+    \item \textbf{Microscopic Reversibility \& Fluctuations:} Because every individual microstate has $P > 0$, transient entropy-decreasing fluctuations ($\Delta S < 0$) are permitted and naturally expected in finite systems ($N < \infty$).
+    \item \textbf{Combinatorial Asymmetry:} Macroscopic irreversibility stems from microstate count asymmetry. Equilibrium macrostates comprise virtually the entire phase space ($\Omega(N, N/2) \gg \Omega(N, k_{\text{ordered}})$), making spontaneous returns to ordered states statistically improbable.
+    \item \textbf{Probabilistic Nature of Irreversibility:} For finite systems, the Second Law is a law of overwhelming probability rather than an absolute prohibition. Entropy increases because disordered macrostates are exponentially more numerous.
+\end{enumerate}
+
+
+\subsubsection{\texorpdfstring{Macroscopic Scaling and the Thermodynamic Limit ($N \sim 10^{23}$ / $N \to \infty$)}{Macroscopic Scaling and the Thermodynamic Limit}}
+\label{subsec:large_N_limit}
+
+We systematically re-examine questions (a) through (j) under macroscopic thermodynamic conditions ($N \sim 10^{23}$, $N \to \infty$):
+
+\begin{itemize}
+    \item \textbf{Point Probabilities vs. Density Concentration:}
+    Single-point probabilities vanish ($P(k) \to 0$ as $N \to \infty$), with $P(N/2) \sim 1/\sqrt{N} \to 0$. However, the integrated probability density over any macroscopic fraction around $N/2$ approaches $1$, forming a sharp density peak.
+
+    \item \textbf{Extensivity of Entropy Changes:}
+    Entropy is extensive ($S \sim O(N)$). Microscopic fluctuations ($\Delta k = \text{const}$) produce vanishing entropy shifts ($\Delta S / k_B \to 0$), whereas macroscopic fractional deviations ($\Delta k \propto N$) create insurmountable free-energy barriers ($\Delta S / k_B \sim -O(N) \to -\infty$).
+
+    \item \textbf{Recurrence Times:}
+    Waiting times scale exponentially ($\langle T_{\text{wait}} \rangle \sim 2^N / N \to \infty$). For $N \sim 10^{23}$, the recurrence time exceeds $10^{10^{22}}$ years, rendering spontaneous macroscopic ordering impossible.
+
+    \item \textbf{Likelihood Ratio Convergence:}
+    The likelihood ratio for macroscopic offsets scales as $\mathcal{R} \sim \exp(+O(N)) \to \infty$. In intensive coordinates ($k/N$), the probability distribution collapses into a Dirac delta function $\delta(k/N - 1/2)$.
+
+    \item \textbf{Emergence of Classical Determinism:}
+    The relative fluctuation vanishes identically:
+    \begin{equation}
+        \frac{\sigma}{\mu} = \frac{\sqrt{N}/2}{N/2} = \frac{1}{\sqrt{N}} \xrightarrow[N \to \infty]{} 0
+    \end{equation}
+    Spontaneous macroscopic entropy reduction has probability $P \sim e^{-O(N)} \to 0$. In the thermodynamic limit, the probabilistic Second Law transitions into an absolute, deterministic law of nature.
+\end{itemize}
 %==========================================================================
 \section{Conclusion}
 %==========================================================================
